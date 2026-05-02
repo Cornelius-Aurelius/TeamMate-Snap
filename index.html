@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07140d" />
+  <title>Team Snap - Colour Blind Football Game</title>
+  <style>
+    :root {
+      --bg: #07140d;
+      --grass-1: #123d22;
+      --grass-2: #0e331c;
+      --panel: #ffffff;
+      --ink: #111827;
+      --muted: #5b6472;
+      --line: #d8e1ea;
+      --soft: #edf3f6;
+      --gold: #ffd24a;
+      --good: #0b7a44;
+      --bad: #b42318;
+      --blue: #1f4ed8;
+      --red: #c52222;
+      --orange: #f97316;
+      --purple: #6d28d9;
+      --dark: #111827;
+      --light: #f7f7ef;
+      --shadow: 0 22px 55px rgba(0,0,0,.34);
+      --radius: 28px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 5%, rgba(255,255,255,.12), transparent 24%),
+        radial-gradient(circle at 90% 0%, rgba(255,210,74,.18), transparent 28%),
+        linear-gradient(145deg, #07140d, #071827 70%);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    button {
+      font: inherit;
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+    }
+
+    .app {
+      width: 100%;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(12px, var(--safe-top)) max(12px, var(--safe-right)) max(14px, var(--safe-bottom)) max(12px, var(--safe-left));
+    }
+
+    .screen {
+      width: min(1160px, 100%);
+      min-height: min(820px, calc(100dvh - 24px));
+      display: none;
+    }
+
+    .screen.active { display: grid; }
+
+    .card {
+      width: min(760px, 100%);
+      place-self: center;
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 5vw, 52px);
+      text-align: center;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: clamp(44px, 10vw, 86px);
+      line-height: .88;
+      letter-spacing: -.07em;
+    }
+
+    h2 {
+      font-size: clamp(34px, 7vw, 62px);
+      line-height: .92;
+      letter-spacing: -.055em;
+    }
+
+    h3 {
+      font-size: clamp(22px, 4.5vw, 34px);
+      line-height: 1;
+      letter-spacing: -.035em;
+    }
+
+    .logo {
+      width: 88px;
+      height: 88px;
+      border-radius: 28px;
+      display: inline-grid;
+      place-items: center;
+      background: #07140d;
+      color: var(--gold);
+      font-size: 48px;
+      margin-bottom: 16px;
+      box-shadow: inset 0 -8px 0 rgba(255,255,255,.08);
+    }
+
+    .sub {
+      margin: 14px auto 0;
+      max-width: 610px;
+      color: var(--muted);
+      font-size: clamp(17px, 2.7vw, 22px);
+      line-height: 1.36;
+      font-weight: 750;
+    }
+
+    .actions {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .primary, .secondary, .ghost {
+      min-height: 58px;
+      border-radius: 999px;
+      padding: 0 28px;
+      font-weight: 1000;
+      letter-spacing: -.015em;
+      font-size: clamp(17px, 2.6vw, 21px);
+    }
+
+    .primary {
+      background: var(--gold);
+      color: #111827;
+      box-shadow: 0 10px 0 rgba(0,0,0,.18);
+    }
+
+    .primary:active { transform: translateY(4px); box-shadow: 0 6px 0 rgba(0,0,0,.18); }
+
+    .secondary {
+      background: var(--soft);
+      border: 2px solid var(--line);
+      color: var(--ink);
+    }
+
+    .ghost {
+      background: rgba(255,255,255,.13);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.22);
+    }
+
+    .simple-rules {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .rule-tile {
+      background: var(--soft);
+      border: 2px solid var(--line);
+      border-radius: 22px;
+      padding: 14px 12px;
+      min-height: 92px;
+      display: grid;
+      place-items: center;
+      gap: 6px;
+      font-weight: 1000;
+      line-height: 1.1;
+    }
+
+    .rule-tile span {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .game-shell {
+      width: min(1160px, 100%);
+      min-height: calc(100dvh - 24px);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: clamp(10px, 1.7vw, 16px);
+    }
+
+    .topbar {
+      color: #fff;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill-row.center { justify-content: center; }
+    .pill-row.right { justify-content: flex-end; }
+
+    .pill {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.22);
+      color: #fff;
+      font-weight: 1000;
+      font-size: clamp(13px, 2vw, 17px);
+      white-space: nowrap;
+    }
+
+    .pause-btn {
+      min-height: 48px;
+      min-width: 96px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 1000;
+      box-shadow: 0 12px 28px rgba(0,0,0,.2);
+    }
+
+    .mission-card {
+      width: min(860px, 100%);
+      justify-self: center;
+      background: #fff;
+      border-radius: 28px;
+      border: 5px solid var(--gold);
+      box-shadow: var(--shadow);
+      text-align: center;
+      padding: clamp(14px, 3vw, 24px);
+    }
+
+    .tiny-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: 12px;
+      font-weight: 1000;
+      margin-bottom: 6px;
+    }
+
+    .mission-text {
+      font-size: clamp(31px, 7.4vw, 70px);
+      line-height: .92;
+      letter-spacing: -.06em;
+      font-weight: 1000;
+    }
+
+    .helper-text {
+      margin-top: 8px;
+      color: #263244;
+      font-weight: 1000;
+      font-size: clamp(17px, 3vw, 24px);
+    }
+
+    .pitch-wrap {
+      width: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    .pitch {
+      position: relative;
+      width: min(1020px, 100%);
+      min-height: clamp(330px, 48dvh, 500px);
+      border-radius: clamp(22px, 4vw, 38px);
+      overflow: hidden;
+      border: 5px solid rgba(255,255,255,.78);
+      box-shadow: var(--shadow), inset 0 0 0 2px rgba(255,255,255,.18);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.24) 0 2px, transparent 2px calc(100% - 2px), rgba(255,255,255,.24) calc(100% - 2px)),
+        repeating-linear-gradient(90deg, var(--grass-1) 0 9.09%, var(--grass-2) 9.09% 18.18%);
+    }
+
+    .pitch::before {
+      content: "";
+      position: absolute;
+      inset: 9% 6%;
+      border: 3px solid rgba(255,255,255,.45);
+      border-radius: 24px;
+      pointer-events: none;
+    }
+
+    .pitch::after {
+      content: "";
+      position: absolute;
+      left: 50%; top: 0; bottom: 0;
+      width: 3px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.42);
+      pointer-events: none;
+    }
+
+    .centre-circle {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 96px; height: 96px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 3px solid rgba(255,255,255,.42);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .option {
+      --x: 50%;
+      --y: 50%;
+      --scale: 1;
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      transform: translate(-50%, -50%) scale(var(--scale));
+      width: clamp(96px, 17vw, 142px);
+      min-height: clamp(128px, 23vw, 180px);
+      border-radius: 24px;
+      background: rgba(255,255,255,.94);
+      border: 4px solid rgba(255,255,255,.96);
+      box-shadow: 0 14px 32px rgba(0,0,0,.24);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      place-items: center;
+      padding: 8px 8px 10px;
+      z-index: 2;
+    }
+
+    .option:focus-visible {
+      outline: 6px solid var(--gold);
+      outline-offset: 6px;
+    }
+
+    .option.correct {
+      border-color: var(--good);
+      animation: pop .18s ease-out 1;
+    }
+
+    .option.wrong {
+      border-color: var(--bad);
+      animation: shake .22s linear 1;
+    }
+
+    @keyframes pop {
+      50% { transform: translate(-50%, -50%) scale(calc(var(--scale) * 1.08)); }
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translate(-50%, -50%) scale(var(--scale)); }
+      25% { transform: translate(calc(-50% - 9px), -50%) scale(var(--scale)); }
+      75% { transform: translate(calc(-50% + 9px), -50%) scale(var(--scale)); }
+    }
+
+    .player {
+      width: 82px;
+      height: 104px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 8px 5px rgba(0,0,0,.16));
+    }
+
+    .head {
+      position: absolute;
+      top: 0;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #f3c7a7;
+      border: 3px solid #111827;
+      z-index: 3;
+    }
+
+    .shirt {
+      position: absolute;
+      top: 24px;
+      width: 60px;
+      height: 44px;
+      border-radius: 14px 14px 10px 10px;
+      background: var(--shirt, #1f4ed8);
+      border: 4px solid #111827;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .shirt::before, .shirt::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 18px;
+      height: 25px;
+      background: inherit;
+      border: 4px solid #111827;
+      border-radius: 10px;
+      z-index: -1;
+    }
+
+    .shirt::before { left: -16px; transform: rotate(25deg); }
+    .shirt::after { right: -16px; transform: rotate(-25deg); }
+
+    .shirt.stripes {
+      background:
+        repeating-linear-gradient(90deg, var(--shirt, #1f4ed8) 0 10px, var(--stripe, #fff) 10px 20px);
+    }
+
+    .shirt.hoops {
+      background:
+        repeating-linear-gradient(0deg, var(--shirt, #1f4ed8) 0 10px, var(--stripe, #fff) 10px 20px);
+    }
+
+    .shirt.sash {
+      background:
+        linear-gradient(135deg, transparent 0 38%, var(--stripe, #fff) 38% 55%, transparent 55%),
+        var(--shirt, #1f4ed8);
+    }
+
+    .number {
+      position: absolute;
+      inset: 8px 0 0;
+      display: grid;
+      place-items: center;
+      color: #111827;
+      font-weight: 1000;
+      font-size: 21px;
+      text-shadow: 0 1px 0 rgba(255,255,255,.45);
+    }
+
+    .shorts {
+      position: absolute;
+      top: 66px;
+      width: 52px;
+      height: 22px;
+      border-radius: 0 0 12px 12px;
+      background: var(--shorts, #fff);
+      border: 4px solid #111827;
+      z-index: 2;
+    }
+
+    .legs {
+      position: absolute;
+      top: 86px;
+      width: 48px;
+      height: 18px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 1;
+    }
+
+    .leg {
+      width: 16px;
+      height: 24px;
+      border-radius: 0 0 8px 8px;
+      background: var(--socks, #fff);
+      border: 4px solid #111827;
+    }
+
+    .arrow-cue {
+      position: absolute;
+      top: -10px;
+      right: -6px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #111827;
+      border: 3px solid #111827;
+      font-size: 24px;
+      font-weight: 1000;
+      z-index: 5;
+    }
+
+    .option-label {
+      min-height: 26px;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      padding: 5px 10px;
+      font-size: clamp(13px, 2vw, 17px);
+      font-weight: 1000;
+      letter-spacing: -.015em;
+      line-height: 1;
+    }
+
+    .you-badge {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: grid;
+      gap: 4px;
+      place-items: center;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .ball {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 50% 50%, #111827 0 18%, transparent 19%),
+        radial-gradient(circle at 28% 28%, #111827 0 10%, transparent 11%),
+        #fff;
+      border: 4px solid #111827;
+      box-shadow: 0 8px 14px rgba(0,0,0,.25);
+    }
+
+    .you-label {
+      background: var(--gold);
+      color: #111827;
+      border: 3px solid #111827;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 15px;
+      font-weight: 1000;
+      box-shadow: 0 8px 14px rgba(0,0,0,.22);
+    }
+
+    .status-area {
+      width: min(860px, 100%);
+      justify-self: center;
+      display: grid;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .bar {
+      height: 13px;
+      background: rgba(255,255,255,.16);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.24);
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: var(--gold);
+      border-radius: inherit;
+      transition: width .2s ease;
+    }
+
+    .message {
+      text-align: center;
+      color: #fff;
+      min-height: 27px;
+      font-size: clamp(16px, 2.6vw, 21px);
+      font-weight: 900;
+    }
+
+    .level-grid {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .level-chip {
+      min-height: 76px;
+      border-radius: 22px;
+      background: var(--soft);
+      border: 2px solid var(--line);
+      padding: 10px;
+      font-weight: 1000;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .level-chip small {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+      font-weight: 900;
+    }
+
+    .level-chip.locked { opacity: .42; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      place-items: center;
+      padding: 16px;
+      background: rgba(0,0,0,.66);
+    }
+
+    .modal-backdrop.open { display: grid; }
+
+    .modal {
+      width: min(620px, 100%);
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      padding: clamp(22px, 5vw, 38px);
+    }
+
+    .instruction-box {
+      margin-top: 18px;
+      background: var(--soft);
+      border: 2px solid var(--line);
+      border-radius: 24px;
+      padding: 16px;
+      text-align: left;
+      color: #263244;
+      font-size: clamp(16px, 2.8vw, 18px);
+      line-height: 1.38;
+      font-weight: 780;
+    }
+
+    .instruction-box p + p { margin-top: 10px; }
+    .instruction-box strong { color: #111827; }
+
+    @media (min-width: 900px) {
+      .option[data-slot="wide-left"] { --x: 22%; --y: 28%; }
+      .option[data-slot="wide-right"] { --x: 78%; --y: 28%; }
+      .option[data-slot="low-left"] { --x: 24%; --y: 70%; }
+      .option[data-slot="low-right"] { --x: 76%; --y: 70%; }
+      .option[data-slot="mid-left"] { --x: 36%; --y: 50%; }
+      .option[data-slot="mid-right"] { --x: 64%; --y: 50%; }
+      .option[data-slot="top"] { --x: 50%; --y: 24%; }
+      .option[data-slot="bottom"] { --x: 50%; --y: 75%; }
+    }
+
+    @media (max-width: 899px) {
+      .app { align-items: stretch; padding: 10px; }
+      .screen { min-height: calc(100dvh - 20px); }
+      .card { min-height: calc(100dvh - 20px); display: flex; flex-direction: column; justify-content: center; }
+      .simple-rules { grid-template-columns: 1fr; }
+      .game-shell { min-height: calc(100dvh - 20px); gap: 9px; }
+      .topbar {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+          "left pause"
+          "middle middle";
+      }
+      .pill-row:first-child { grid-area: left; }
+      .pill-row.center { grid-area: middle; justify-content: center; }
+      .pill-row.right { grid-area: pause; }
+      .pause-btn { min-width: 84px; min-height: 44px; padding: 0 14px; }
+      .pill { min-height: 36px; padding: 0 10px; }
+      .mission-card { border-width: 4px; border-radius: 22px; padding: 13px 12px; }
+      .pitch { min-height: min(56dvh, 440px); border-radius: 24px; }
+      .centre-circle { width: 76px; height: 76px; }
+      .option {
+        width: clamp(88px, 28vw, 118px);
+        min-height: clamp(118px, 35vw, 152px);
+        border-radius: 21px;
+        padding: 7px;
+      }
+      .player { width: 72px; height: 94px; transform: scale(.9); }
+      .option-label { font-size: 13px; padding: 5px 8px; }
+      .option[data-slot="wide-left"] { --x: 25%; --y: 28%; }
+      .option[data-slot="wide-right"] { --x: 75%; --y: 28%; }
+      .option[data-slot="low-left"] { --x: 25%; --y: 72%; }
+      .option[data-slot="low-right"] { --x: 75%; --y: 72%; }
+      .option[data-slot="mid-left"] { --x: 25%; --y: 50%; }
+      .option[data-slot="mid-right"] { --x: 75%; --y: 50%; }
+      .option[data-slot="top"] { --x: 50%; --y: 24%; }
+      .option[data-slot="bottom"] { --x: 50%; --y: 75%; }
+      .level-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 380px) {
+      .mission-text { font-size: 29px; }
+      .helper-text { font-size: 16px; }
+      .pitch { min-height: 420px; }
+      .option { width: 84px; min-height: 112px; }
+      .player { transform: scale(.82); }
+      .ball { width: 36px; height: 36px; }
+      .you-label { font-size: 13px; padding: 4px 10px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 560px) {
+      .game-shell { grid-template-rows: auto auto 1fr; }
+      .status-area { display: none; }
+      .pitch { min-height: 245px; }
+      .mission-text { font-size: clamp(28px, 5vw, 48px); }
+      .helper-text { font-size: 16px; }
+      .option { width: 88px; min-height: 118px; }
+      .player { transform: scale(.78); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="screen active" id="startScreen" aria-labelledby="gameTitle">
+      <div class="card">
+        <div class="logo" aria-hidden="true">⚽</div>
+        <h1 id="gameTitle">Team Snap</h1>
+        <p class="sub">A colour-blind football game. Find your teammate using kit clues that are safer than colour.</p>
+        <div class="simple-rules" aria-label="Game rules">
+          <div class="rule-tile"><span>👀</span>Read the mission</div>
+          <div class="rule-tile"><span>🧦</span>Use the clue</div>
+          <div class="rule-tile"><span>⚽</span>Tap teammate</div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="startBtn">Start Level 1</button>
+          <button class="secondary" id="levelsBtn">Choose Level</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="levelScreen" aria-labelledby="levelTitle">
+      <div class="card">
+        <h2 id="levelTitle">Choose Level</h2>
+        <p class="sub">One objective per level. Every level trains a different way to recognise teammates.</p>
+        <div class="level-grid" id="levelGrid"></div>
+        <div class="actions">
+          <button class="secondary" id="backHomeBtn">Back</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="gameScreen" aria-live="polite">
+      <div class="game-shell">
+        <div class="topbar">
+          <div class="pill-row">
+            <div class="pill" id="levelPill">Level 1</div>
+          </div>
+          <div class="pill-row center">
+            <div class="pill" id="progressPill">1 / 5</div>
+            <div class="pill" id="timerPill">60s</div>
+            <div class="pill" id="streakPill">Streak 0</div>
+          </div>
+          <div class="pill-row right">
+            <button class="pause-btn" id="pauseBtn">Pause</button>
+          </div>
+        </div>
+
+        <div class="mission-card">
+          <div class="tiny-label">Mission</div>
+          <div class="mission-text" id="missionText">Tap your teammate</div>
+          <div class="helper-text" id="helperText">Look at the full kit</div>
+        </div>
+
+        <div class="pitch-wrap">
+          <div class="pitch" id="pitch" role="group" aria-label="Football pitch answer choices">
+            <div class="centre-circle" aria-hidden="true"></div>
+            <div class="you-badge" aria-hidden="true">
+              <div class="ball"></div>
+              <div class="you-label">YOU</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-area">
+          <div class="bar" aria-hidden="true"><div class="fill" id="progressFill"></div></div>
+          <div class="message" id="message">Tap the player who matches the clue.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="resultScreen">
+      <div class="card">
+        <div class="logo" id="resultIcon" aria-hidden="true">✓</div>
+        <h2 id="resultTitle">Level Complete</h2>
+        <p class="sub" id="resultText">You used the cue, not the colour.</p>
+        <div class="actions" id="resultActions"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="pauseModal" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+    <div class="modal">
+      <h2 id="pauseTitle">Paused</h2>
+      <p class="sub">The timer is stopped.</p>
+      <div class="instruction-box">
+        <p><strong>How to play:</strong> read the big mission, use the clue, then tap your teammate.</p>
+        <p><strong>This level:</strong> <span id="levelHelp">Use the full kit. Do not rely only on shirt colour.</span></p>
+        <p><strong>Football habit:</strong> colour can lie. Check a second clue before you pass.</p>
+      </div>
+      <div class="actions">
+        <button class="primary" id="resumeBtn">Resume</button>
+        <button class="secondary" id="restartBtn">Restart</button>
+        <button class="secondary" id="menuBtn">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const screens = {
+      start: document.getElementById("startScreen"),
+      levels: document.getElementById("levelScreen"),
+      game: document.getElementById("gameScreen"),
+      result: document.getElementById("resultScreen")
+    };
+
+    const els = {
+      startBtn: document.getElementById("startBtn"),
+      levelsBtn: document.getElementById("levelsBtn"),
+      backHomeBtn: document.getElementById("backHomeBtn"),
+      levelGrid: document.getElementById("levelGrid"),
+      levelPill: document.getElementById("levelPill"),
+      progressPill: document.getElementById("progressPill"),
+      timerPill: document.getElementById("timerPill"),
+      streakPill: document.getElementById("streakPill"),
+      missionText: document.getElementById("missionText"),
+      helperText: document.getElementById("helperText"),
+      pitch: document.getElementById("pitch"),
+      progressFill: document.getElementById("progressFill"),
+      message: document.getElementById("message"),
+      pauseBtn: document.getElementById("pauseBtn"),
+      pauseModal: document.getElementById("pauseModal"),
+      levelHelp: document.getElementById("levelHelp"),
+      resumeBtn: document.getElementById("resumeBtn"),
+      restartBtn: document.getElementById("restartBtn"),
+      menuBtn: document.getElementById("menuBtn"),
+      resultIcon: document.getElementById("resultIcon"),
+      resultTitle: document.getElementById("resultTitle"),
+      resultText: document.getElementById("resultText"),
+      resultActions: document.getElementById("resultActions")
+    };
+
+    const slots = ["wide-left", "wide-right", "low-left", "low-right", "mid-left", "mid-right", "top", "bottom"];
+
+    const colours = {
+      blue: "#1f4ed8",
+      deepBlue: "#123a9e",
+      red: "#c52222",
+      green: "#15803d",
+      orange: "#f97316",
+      purple: "#6d28d9",
+      black: "#111827",
+      white: "#f8fafc",
+      yellow: "#ffd84d",
+      grey: "#6b7280",
+      maroon: "#7f1d1d",
+      teal: "#0f766e"
+    };
+
+    const levels = [
+      {
+        name: "Full Kit",
+        clue: "easy full-kit match",
+        total: 5,
+        time: 75,
+        help: "Find the teammate with the same shirt, shorts and socks as your team.",
+        builder: buildFullKitMission
+      },
+      {
+        name: "Socks",
+        clue: "use socks",
+        total: 6,
+        time: 72,
+        help: "The shirts can be confusing. Look at the socks before passing.",
+        builder: buildSocksMission
+      },
+      {
+        name: "Shorts",
+        clue: "use shorts",
+        total: 6,
+        time: 70,
+        help: "The shirt colours are not enough. Use the shorts to find your teammate.",
+        builder: buildShortsMission
+      },
+      {
+        name: "Pattern",
+        clue: "pattern beats colour",
+        total: 7,
+        time: 72,
+        help: "Stripes, hoops and sashes can be safer than shirt colour.",
+        builder: buildPatternMission
+      },
+      {
+        name: "Light / Dark",
+        clue: "brightness cue",
+        total: 6,
+        time: 65,
+        help: "Use light kit or dark kit. Do not use colour names.",
+        builder: buildBrightnessMission
+      },
+      {
+        name: "Direction",
+        clue: "movement direction",
+        total: 7,
+        time: 68,
+        help: "Use the direction arrow. Teammates and opponents may wear confusing colours.",
+        builder: buildDirectionMission
+      },
+      {
+        name: "Position",
+        clue: "space and position",
+        total: 6,
+        time: 65,
+        help: "Use pitch position: top, bottom, left or right. This trains scanning space, not colour.",
+        builder: buildPositionMission
+      },
+      {
+        name: "Kit Clash",
+        clue: "colour trap",
+        total: 8,
+        time: 70,
+        help: "Both teams look similar. Find the second clue: socks, shorts, pattern or brightness.",
+        builder: buildClashMission
+      },
+      {
+        name: "Match Mix",
+        clue: "fast decisions",
+        total: 10,
+        time: 80,
+        help: "One mission at a time. Use the clue shown under the mission card.",
+        builder: buildMixedMission
+      }
+    ];
+
+    let state = {
+      levelIndex: 0,
+      missionNumber: 0,
+      streak: 0,
+      bestStreak: 0,
+      wrong: 0,
+      timeLeft: 0,
+      timer: null,
+      paused: false,
+      locked: false,
+      currentMission: null,
+      unlocked: Math.max(1, Number(localStorage.getItem("teamSnapUnlocked") || 1))
+    };
+
+    function showScreen(name) {
+      Object.values(screens).forEach(screen => screen.classList.remove("active"));
+      screens[name].classList.add("active");
+    }
+
+    function randomItem(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function shuffle(list) {
+      const copy = [...list];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function makeKit({ shirt, shorts, socks, pattern = "plain", stripe = "#fff", number = "" }) {
+      return { shirt, shorts, socks, pattern, stripe, number };
+    }
+
+    function createPlayer(key, label, kit, isTarget, cue = {}) {
+      return { key, label, kit, isTarget, cue };
+    }
+
+    function uniqueKey(prefix) {
+      return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function startLevel(index) {
+      clearInterval(state.timer);
+      state.levelIndex = Math.max(0, Math.min(index, levels.length - 1));
+      state.missionNumber = 0;
+      state.streak = 0;
+      state.bestStreak = 0;
+      state.wrong = 0;
+      state.timeLeft = levels[state.levelIndex].time;
+      state.paused = false;
+      state.locked = false;
+      state.currentMission = null;
+      els.levelHelp.textContent = levels[state.levelIndex].help;
+      showScreen("game");
+      nextMission();
+      startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(state.timer);
+      updateHUD();
+      state.timer = setInterval(() => {
+        if (state.paused) return;
+        state.timeLeft -= 1;
+        updateHUD();
+        if (state.timeLeft <= 0) failLevel();
+      }, 1000);
+    }
+
+    function updateHUD() {
+      const level = levels[state.levelIndex];
+      els.levelPill.textContent = `Level ${state.levelIndex + 1}: ${level.name}`;
+      els.progressPill.textContent = `${Math.min(state.missionNumber + 1, level.total)} / ${level.total}`;
+      els.timerPill.textContent = `${Math.max(0, state.timeLeft)}s`;
+      els.streakPill.textContent = `Streak ${state.streak}`;
+      els.progressFill.style.width = `${Math.min(100, (state.missionNumber / level.total) * 100)}%`;
+    }
+
+    function nextMission() {
+      const level = levels[state.levelIndex];
+      if (state.missionNumber >= level.total) {
+        completeLevel();
+        return;
+      }
+
+      state.locked = false;
+      state.currentMission = level.builder();
+      els.missionText.textContent = state.currentMission.prompt;
+      els.helperText.textContent = state.currentMission.helper;
+      els.message.textContent = state.currentMission.message || "Tap the teammate who matches the clue.";
+      renderMission(state.currentMission);
+      updateHUD();
+    }
+
+    function completeLevel() {
+      clearInterval(state.timer);
+      const completed = state.levelIndex + 1;
+      state.unlocked = Math.max(state.unlocked, Math.min(levels.length, completed + 1));
+      localStorage.setItem("teamSnapUnlocked", String(state.unlocked));
+      els.progressFill.style.width = "100%";
+      els.resultIcon.textContent = "✓";
+      els.resultTitle.textContent = "Level Complete";
+      els.resultText.textContent = `Best streak: ${state.bestStreak}. Wrong taps: ${state.wrong}. Colour is only one clue.`;
+      els.resultActions.innerHTML = "";
+      if (state.levelIndex < levels.length - 1) {
+        els.resultActions.appendChild(makeAction("Next Level", "primary", () => startLevel(state.levelIndex + 1)));
+      } else {
+        els.resultActions.appendChild(makeAction("Play Again", "primary", () => startLevel(0)));
+      }
+      els.resultActions.appendChild(makeAction("Choose Level", "secondary", () => { buildLevelGrid(); showScreen("levels"); }));
+      showScreen("result");
+    }
+
+    function failLevel() {
+      clearInterval(state.timer);
+      state.locked = true;
+      els.resultIcon.textContent = "↻";
+      els.resultTitle.textContent = "Try Again";
+      els.resultText.textContent = "The timer finished. Restart and use the backup cue before you pass.";
+      els.resultActions.innerHTML = "";
+      els.resultActions.appendChild(makeAction("Restart Level", "primary", () => startLevel(state.levelIndex)));
+      els.resultActions.appendChild(makeAction("Choose Level", "secondary", () => { buildLevelGrid(); showScreen("levels"); }));
+      showScreen("result");
+    }
+
+    function makeAction(text, className, fn) {
+      const btn = document.createElement("button");
+      btn.className = className;
+      btn.textContent = text;
+      btn.addEventListener("click", fn);
+      return btn;
+    }
+
+    function renderMission(mission) {
+      [...els.pitch.querySelectorAll(".option")].forEach(node => node.remove());
+      const arranged = arrangeOptions(mission.options, mission.slotMode);
+      arranged.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.type = "button";
+        btn.dataset.key = option.key;
+        btn.dataset.slot = option.slot || slots[index] || "mid-left";
+        btn.setAttribute("aria-label", option.label);
+        btn.appendChild(renderPlayer(option));
+        const label = document.createElement("div");
+        label.className = "option-label";
+        label.textContent = option.label;
+        btn.appendChild(label);
+        btn.addEventListener("click", () => handleChoice(btn, option));
+        els.pitch.appendChild(btn);
+      });
+    }
+
+    function arrangeOptions(options, mode = "four") {
+      const slotSet = mode === "two" ? ["mid-left", "mid-right"] : mode === "three" ? ["wide-left", "wide-right", "bottom"] : ["wide-left", "wide-right", "low-left", "low-right"];
+      return shuffle(options).map((option, index) => ({ ...option, slot: option.cue.slot || slotSet[index] || slots[index] }));
+    }
+
+    function renderPlayer(option) {
+      const kit = option.kit;
+      const player = document.createElement("div");
+      player.className = "player";
+      player.style.setProperty("--shirt", kit.shirt);
+      player.style.setProperty("--shorts", kit.shorts);
+      player.style.setProperty("--socks", kit.socks);
+      player.style.setProperty("--stripe", kit.stripe || "#fff");
+
+      const head = document.createElement("div");
+      head.className = "head";
+      const shirt = document.createElement("div");
+      shirt.className = `shirt ${kit.pattern && kit.pattern !== "plain" ? kit.pattern : ""}`.trim();
+      if (kit.number) {
+        const number = document.createElement("div");
+        number.className = "number";
+        number.textContent = kit.number;
+        shirt.appendChild(number);
+      }
+      const shorts = document.createElement("div");
+      shorts.className = "shorts";
+      const legs = document.createElement("div");
+      legs.className = "legs";
+      const legA = document.createElement("div");
+      legA.className = "leg";
+      const legB = document.createElement("div");
+      legB.className = "leg";
+      legs.append(legA, legB);
+      player.append(head, shirt, shorts, legs);
+
+      if (option.cue.arrow) {
+        const arrow = document.createElement("div");
+        arrow.className = "arrow-cue";
+        arrow.textContent = option.cue.arrow;
+        player.appendChild(arrow);
+      }
+
+      return player;
+    }
+
+    function handleChoice(button, option) {
+      if (state.locked || state.paused) return;
+      if (option.isTarget) {
+        state.locked = true;
+        button.classList.add("correct");
+        state.streak += 1;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        state.missionNumber += 1;
+        els.message.textContent = "Correct pass. Next mission.";
+        updateHUD();
+        setTimeout(nextMission, 140);
+      } else {
+        state.streak = 0;
+        state.wrong += 1;
+        button.classList.add("wrong");
+        els.message.textContent = "Wrong player. Use the clue, not just colour.";
+        updateHUD();
+        setTimeout(() => button.classList.remove("wrong"), 260);
+      }
+    }
+
+    function buildFullKitMission() {
+      const team = makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "8" });
+      const options = [
+        createPlayer("target", "Teammate", team, true),
+        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: colours.red, shorts: colours.black, socks: colours.white, number: "5" }), false),
+        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: colours.green, shorts: colours.white, socks: colours.black, number: "9" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: "Same full kit",
+        options,
+        slotMode: "three"
+      };
+    }
+
+    function buildSocksMission() {
+      const sockOptions = [
+        { target: colours.yellow, wrong: colours.black, word: "yellow socks" },
+        { target: colours.white, wrong: colours.black, word: "white socks" },
+        { target: colours.black, wrong: colours.white, word: "black socks" }
+      ];
+      const chosen = randomItem(sockOptions);
+      const confusingShirt = randomItem([colours.red, colours.orange, colours.green, colours.maroon]);
+      const options = [
+        createPlayer("target", "Teammate", makeKit({ shirt: confusingShirt, shorts: colours.white, socks: chosen.target, number: "7" }), true),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: confusingShirt, shorts: colours.white, socks: chosen.wrong, number: "4" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.orange, shorts: colours.black, socks: chosen.wrong, number: "2" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: confusingShirt, shorts: colours.black, socks: colours.grey, number: "6" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: `Look for ${chosen.word}`,
+        options
+      };
+    }
+
+    function buildShortsMission() {
+      const targetShorts = randomItem([colours.white, colours.black, colours.yellow]);
+      const wrongShorts = targetShorts === colours.black ? colours.white : colours.black;
+      const shirt = randomItem([colours.blue, colours.purple, colours.teal]);
+      const options = [
+        createPlayer("target", "Teammate", makeKit({ shirt, shorts: targetShorts, socks: colours.white, number: "10" }), true),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt, shorts: wrongShorts, socks: colours.white, number: "3" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.purple, shorts: wrongShorts, socks: colours.black, number: "11" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt, shorts: colours.grey, socks: colours.black, number: "6" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: targetShorts === colours.black ? "Look for black shorts" : targetShorts === colours.white ? "Look for white shorts" : "Look for yellow shorts",
+        options
+      };
+    }
+
+    function buildPatternMission() {
+      const patterns = [
+        { pattern: "stripes", word: "stripes" },
+        { pattern: "hoops", word: "hoops" },
+        { pattern: "sash", word: "sash" }
+      ];
+      const targetPattern = randomItem(patterns);
+      const base = randomItem([colours.red, colours.green, colours.blue, colours.purple]);
+      const options = [
+        createPlayer("target", "Teammate", makeKit({ shirt: base, shorts: colours.white, socks: colours.black, pattern: targetPattern.pattern, stripe: colours.white, number: "8" }), true),
+        createPlayer(uniqueKey("opp"), "Plain", makeKit({ shirt: base, shorts: colours.white, socks: colours.black, pattern: "plain", number: "5" }), false),
+        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: base, shorts: colours.black, socks: colours.white, pattern: targetPattern.pattern === "stripes" ? "hoops" : "stripes", stripe: colours.yellow, number: "2" }), false),
+        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: randomItem([colours.orange, colours.green]), shorts: colours.black, socks: colours.white, pattern: "plain", number: "9" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: `Look for ${targetPattern.word}`,
+        options
+      };
+    }
+
+    function buildBrightnessMission() {
+      const targetLight = Math.random() > 0.5;
+      const targetKit = targetLight
+        ? makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white, number: "8" })
+        : makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black, number: "8" });
+      const wrongKit = targetLight
+        ? makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black, number: "6" })
+        : makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white, number: "6" });
+      const options = [
+        createPlayer("target", "Teammate", targetKit, true),
+        createPlayer(uniqueKey("opp"), "Opponent", wrongKit, false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.grey, shorts: colours.white, socks: colours.black, number: "4" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: targetLight ? "Look for light kit" : "Look for dark kit",
+        options,
+        slotMode: "three"
+      };
+    }
+
+    function buildDirectionMission() {
+      const dirs = [
+        { word: "left", arrow: "←" },
+        { word: "right", arrow: "→" },
+        { word: "up", arrow: "↑" },
+        { word: "down", arrow: "↓" }
+      ];
+      const targetDir = randomItem(dirs);
+      const others = dirs.filter(d => d.word !== targetDir.word);
+      const confusing = makeKit({ shirt: colours.red, shorts: colours.black, socks: colours.white, number: "7" });
+      const options = [
+        createPlayer("target", "Teammate", confusing, true, { arrow: targetDir.arrow }),
+        createPlayer(uniqueKey("opp"), "Opponent", confusing, false, { arrow: others[0].arrow }),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.orange, shorts: colours.black, socks: colours.white, number: "4" }), false, { arrow: others[1].arrow }),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black, number: "5" }), false, { arrow: others[2].arrow })
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: `Moving ${targetDir.word}`,
+        options
+      };
+    }
+
+    function buildPositionMission() {
+      const position = randomItem([
+        { word: "top", slot: "top" },
+        { word: "bottom", slot: "bottom" },
+        { word: "left", slot: "mid-left" },
+        { word: "right", slot: "mid-right" }
+      ]);
+      const target = createPlayer("target", "Teammate", makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "8" }), true, { slot: position.slot });
+      const options = [
+        target,
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.blue, shorts: colours.black, socks: colours.white, number: "4" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black, number: "5" }), false),
+        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.green, shorts: colours.black, socks: colours.white, number: "9" }), false)
+      ];
+      return {
+        prompt: "Tap your teammate",
+        helper: `Use position: ${position.word}`,
+        options
+      };
+    }
+
+    function buildClashMission() {
+      const builders = [buildSocksMission, buildShortsMission, buildPatternMission, buildBrightnessMission];
+      const mission = randomItem(builders)();
+      mission.prompt = "Kit clash: find teammate";
+      mission.message = "Colours are confusing. Use the second clue.";
+      return mission;
+    }
+
+    function buildMixedMission() {
+      const builders = [buildSocksMission, buildShortsMission, buildPatternMission, buildBrightnessMission, buildDirectionMission, buildPositionMission];
+      const mission = randomItem(builders)();
+      mission.prompt = "Fast pass: teammate?";
+      return mission;
+    }
+
+    function buildLevelGrid() {
+      els.levelGrid.innerHTML = "";
+      levels.forEach((level, index) => {
+        const locked = index + 1 > state.unlocked;
+        const btn = document.createElement("button");
+        btn.className = `level-chip${locked ? " locked" : ""}`;
+        btn.disabled = locked;
+        btn.innerHTML = `${locked ? "🔒 " : ""}Level ${index + 1}: ${level.name}<small>${level.clue}</small>`;
+        btn.addEventListener("click", () => startLevel(index));
+        els.levelGrid.appendChild(btn);
+      });
+    }
+
+    function openPause() {
+      if (!screens.game.classList.contains("active")) return;
+      state.paused = true;
+      els.pauseModal.classList.add("open");
+      els.resumeBtn.focus();
+    }
+
+    function closePause() {
+      state.paused = false;
+      els.pauseModal.classList.remove("open");
+    }
+
+    function menuFromPause() {
+      clearInterval(state.timer);
+      closePause();
+      showScreen("start");
+    }
+
+    els.startBtn.addEventListener("click", () => startLevel(0));
+    els.levelsBtn.addEventListener("click", () => { buildLevelGrid(); showScreen("levels"); });
+    els.backHomeBtn.addEventListener("click", () => showScreen("start"));
+    els.pauseBtn.addEventListener("click", openPause);
+    els.resumeBtn.addEventListener("click", closePause);
+    els.restartBtn.addEventListener("click", () => { closePause(); startLevel(state.levelIndex); });
+    els.menuBtn.addEventListener("click", menuFromPause);
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        if (els.pauseModal.classList.contains("open")) closePause();
+        else openPause();
+      }
+    });
+  </script>
+</body>
+</html>
