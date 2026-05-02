@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#07140d" />
-  <title>Team Snap - Colour Blind Football Game</title>
+  <title>TeamMate Snap - Colour Blind Football Game</title>
   <style>
     :root {
       --bg: #07140d;
@@ -244,6 +244,26 @@
       box-shadow: 0 12px 28px rgba(0,0,0,.2);
     }
 
+    .hint-btn {
+      min-height: 48px;
+      min-width: 104px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #111827;
+      font-weight: 1000;
+      box-shadow: 0 12px 28px rgba(0,0,0,.2);
+      border: 2px solid rgba(17,24,39,.16);
+      white-space: nowrap;
+    }
+
+    .hint-btn:disabled {
+      opacity: .48;
+      background: rgba(255,255,255,.32);
+      color: rgba(255,255,255,.88);
+      border-color: rgba(255,255,255,.18);
+    }
+
     .mission-card {
       width: min(860px, 100%);
       justify-self: center;
@@ -360,6 +380,13 @@
     .option.wrong {
       border-color: var(--bad);
       animation: shake .22s linear 1;
+    }
+
+    .option.eliminated {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(.72);
+      transition: opacity .18s ease, transform .18s ease;
     }
 
     @keyframes pop {
@@ -507,13 +534,32 @@
     .you-badge {
       position: absolute;
       left: 50%;
-      top: 50%;
+      top: 52%;
       transform: translate(-50%, -50%);
       display: grid;
-      gap: 4px;
+      gap: 2px;
       place-items: center;
       z-index: 3;
       pointer-events: none;
+    }
+
+    .you-player-holder {
+      width: 92px;
+      height: 112px;
+      display: grid;
+      place-items: center;
+    }
+
+    .you-player-holder .player {
+      transform: scale(.9);
+    }
+
+    .you-badge .ball {
+      position: absolute;
+      right: 2px;
+      bottom: 24px;
+      width: 34px;
+      height: 34px;
     }
 
     .ball {
@@ -664,7 +710,8 @@
       .pill-row:first-child { grid-area: left; }
       .pill-row.center { grid-area: middle; justify-content: center; }
       .pill-row.right { grid-area: pause; }
-      .pause-btn { min-width: 84px; min-height: 44px; padding: 0 14px; }
+      .pause-btn { min-width: 78px; min-height: 44px; padding: 0 13px; }
+      .hint-btn { min-width: 90px; min-height: 44px; padding: 0 12px; }
       .pill { min-height: 36px; padding: 0 10px; }
       .mission-card { border-width: 4px; border-radius: 22px; padding: 13px 12px; }
       .pitch { min-height: min(56dvh, 440px); border-radius: 24px; }
@@ -676,6 +723,9 @@
         padding: 7px;
       }
       .player { width: 72px; height: 94px; transform: scale(.9); }
+      .you-player-holder { height: 102px; }
+      .you-player-holder .player { transform: scale(.78); }
+      .you-badge .ball { width: 30px; height: 30px; bottom: 24px; right: 8px; }
       .option-label { font-size: 13px; padding: 5px 8px; }
       .option[data-slot="wide-left"] { --x: 25%; --y: 28%; }
       .option[data-slot="wide-right"] { --x: 75%; --y: 28%; }
@@ -694,6 +744,7 @@
       .pitch { min-height: 420px; }
       .option { width: 84px; min-height: 112px; }
       .player { transform: scale(.82); }
+      .you-player-holder .player { transform: scale(.72); }
       .ball { width: 36px; height: 36px; }
       .you-label { font-size: 13px; padding: 4px 10px; }
     }
@@ -706,6 +757,9 @@
       .helper-text { font-size: 16px; }
       .option { width: 88px; min-height: 118px; }
       .player { transform: scale(.78); }
+      .you-player-holder .player { transform: scale(.62); }
+      .you-player-holder { height: 82px; }
+      .you-label { font-size: 12px; padding: 3px 9px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -718,12 +772,12 @@
     <section class="screen active" id="startScreen" aria-labelledby="gameTitle">
       <div class="card">
         <div class="logo" aria-hidden="true">⚽</div>
-        <h1 id="gameTitle">Team Snap</h1>
+        <h1 id="gameTitle">TeamMate Snap</h1>
         <p class="sub">A colour-blind football game. Find your teammate using kit clues that are safer than colour.</p>
         <div class="simple-rules" aria-label="Game rules">
           <div class="rule-tile"><span>👀</span>Read the mission</div>
           <div class="rule-tile"><span>🧦</span>Use the clue</div>
-          <div class="rule-tile"><span>⚽</span>Tap teammate</div>
+          <div class="rule-tile"><span>⚽</span>Pass to matching kit</div>
         </div>
         <div class="actions">
           <button class="primary" id="startBtn">Start Level 1</button>
@@ -755,6 +809,7 @@
             <div class="pill" id="streakPill">Streak 0</div>
           </div>
           <div class="pill-row right">
+            <button class="hint-btn" id="fiftyBtn" title="Remove half of the wrong answers">50/50 ×3</button>
             <button class="pause-btn" id="pauseBtn">Pause</button>
           </div>
         </div>
@@ -769,8 +824,9 @@
           <div class="pitch" id="pitch" role="group" aria-label="Football pitch answer choices">
             <div class="centre-circle" aria-hidden="true"></div>
             <div class="you-badge" aria-hidden="true">
+              <div class="you-player-holder" id="youPlayerHolder"></div>
               <div class="ball"></div>
-              <div class="you-label">YOU</div>
+              <div class="you-label">YOU · #12</div>
             </div>
           </div>
         </div>
@@ -797,7 +853,7 @@
       <h2 id="pauseTitle">Paused</h2>
       <p class="sub">The timer is stopped.</p>
       <div class="instruction-box">
-        <p><strong>How to play:</strong> read the big mission, use the clue, then choose the player who matches your side.</p>
+        <p><strong>How to play:</strong> read the big mission, check your #12 kit, then pass to the player wearing the same team kit.</p>
         <p><strong>This level:</strong> <span id="levelHelp">Use the full kit. Do not rely only on shirt colour.</span></p>
         <p><strong>Football habit:</strong> colour can lie. Check a second clue before you pass.</p>
       </div>
@@ -834,6 +890,8 @@
       progressFill: document.getElementById("progressFill"),
       message: document.getElementById("message"),
       pauseBtn: document.getElementById("pauseBtn"),
+      fiftyBtn: document.getElementById("fiftyBtn"),
+      youPlayerHolder: document.getElementById("youPlayerHolder"),
       pauseModal: document.getElementById("pauseModal"),
       levelHelp: document.getElementById("levelHelp"),
       resumeBtn: document.getElementById("resumeBtn"),
@@ -943,6 +1001,7 @@
       streak: 0,
       bestStreak: 0,
       wrong: 0,
+      fiftyLeft: 3,
       timeLeft: 0,
       timer: null,
       paused: false,
@@ -973,6 +1032,33 @@
       return { shirt, shorts, socks, pattern, stripe, number };
     }
 
+    function cloneKitWithNumber(kit, number) {
+      return makeKit({
+        shirt: kit.shirt,
+        shorts: kit.shorts,
+        socks: kit.socks,
+        pattern: kit.pattern || "plain",
+        stripe: kit.stripe || "#fff",
+        number
+      });
+    }
+
+    function defaultYouKit() {
+      return makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "12" });
+    }
+
+    function randomTeamNumber() {
+      return randomItem(["2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]);
+    }
+
+    function teammateFromYou(youKit, cue = {}) {
+      return createPlayer("target", "Player", cloneKitWithNumber(youKit, randomTeamNumber()), true, cue);
+    }
+
+    function opponent(kit, cue = {}) {
+      return createPlayer(uniqueKey("opp"), "Player", cloneKitWithNumber(kit, randomTeamNumber()), false, cue);
+    }
+
     function createPlayer(key, label, kit, isTarget, cue = {}) {
       return { key, label, kit, isTarget, cue };
     }
@@ -988,6 +1074,7 @@
       state.streak = 0;
       state.bestStreak = 0;
       state.wrong = 0;
+      state.fiftyLeft = 3;
       state.timeLeft = levels[state.levelIndex].time;
       state.paused = false;
       state.locked = false;
@@ -1016,6 +1103,8 @@
       els.timerPill.textContent = `${Math.max(0, state.timeLeft)}s`;
       els.streakPill.textContent = `Streak ${state.streak}`;
       els.progressFill.style.width = `${Math.min(100, (state.missionNumber / level.total) * 100)}%`;
+      els.fiftyBtn.textContent = `50/50 ×${state.fiftyLeft}`;
+      els.fiftyBtn.disabled = state.fiftyLeft <= 0 || state.paused || state.locked || !state.currentMission;
     }
 
     function nextMission() {
@@ -1075,6 +1164,7 @@
 
     function renderMission(mission) {
       [...els.pitch.querySelectorAll(".option")].forEach(node => node.remove());
+      renderYouPlayer(mission.youKit);
       const arranged = arrangeOptions(mission.options, mission.slotMode);
       arranged.forEach((option, index) => {
         const btn = document.createElement("button");
@@ -1092,6 +1182,12 @@
     function arrangeOptions(options, mode = "four") {
       const slotSet = mode === "two" ? ["mid-left", "mid-right"] : mode === "three" ? ["wide-left", "wide-right", "bottom"] : ["wide-left", "wide-right", "low-left", "low-right"];
       return shuffle(options).map((option, index) => ({ ...option, slot: option.cue.slot || slotSet[index] || slots[index] }));
+    }
+
+    function renderYouPlayer(kit) {
+      els.youPlayerHolder.innerHTML = "";
+      const you = createPlayer("you", "You", cloneKitWithNumber(kit || defaultYouKit(), "12"), false);
+      els.youPlayerHolder.appendChild(renderPlayer(you));
     }
 
     function renderPlayer(option) {
@@ -1134,8 +1230,26 @@
       return player;
     }
 
+    function useFiftyFifty() {
+      if (state.locked || state.paused || state.fiftyLeft <= 0 || !state.currentMission) return;
+      const buttons = [...els.pitch.querySelectorAll(".option:not(.eliminated)")];
+      const wrongButtons = buttons.filter(btn => {
+        const choice = state.currentMission.options.find(option => option.key === btn.dataset.key);
+        return choice && !choice.isTarget;
+      });
+      if (!wrongButtons.length) return;
+      const removeCount = Math.min(wrongButtons.length, Math.max(1, Math.ceil(wrongButtons.length / 2)));
+      shuffle(wrongButtons).slice(0, removeCount).forEach(btn => {
+        btn.classList.add("eliminated");
+        btn.disabled = true;
+      });
+      state.fiftyLeft -= 1;
+      els.message.textContent = "50/50 used. Half the wrong players are gone.";
+      updateHUD();
+    }
+
     function handleChoice(button, option) {
-      if (state.locked || state.paused) return;
+      if (state.locked || state.paused || button.classList.contains("eliminated")) return;
       if (option.isTarget) {
         state.locked = true;
         button.classList.add("correct");
@@ -1156,97 +1270,109 @@
     }
 
     function buildFullKitMission() {
-      const team = makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "8" });
+      const youKit = makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "12" });
       const options = [
-        createPlayer("target", "Teammate", team, true),
-        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: colours.red, shorts: colours.black, socks: colours.white, number: "5" }), false),
-        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: colours.green, shorts: colours.white, socks: colours.black, number: "9" }), false)
+        teammateFromYou(youKit),
+        opponent(makeKit({ shirt: colours.blue, shorts: colours.black, socks: colours.yellow })),
+        opponent(makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.black })),
+        opponent(makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.yellow }))
       ];
       return {
         prompt: "Make the pass",
-        helper: "Find the player with your full kit",
-        options,
-        slotMode: "three"
+        helper: "Match your whole kit: shirt, shorts and socks",
+        youKit,
+        options
       };
     }
 
     function buildSocksMission() {
-      const sockOptions = [
-        { target: colours.yellow, wrong: colours.black, word: "yellow socks" },
-        { target: colours.white, wrong: colours.black, word: "white socks" },
-        { target: colours.black, wrong: colours.white, word: "black socks" }
-      ];
-      const chosen = randomItem(sockOptions);
-      const confusingShirt = randomItem([colours.red, colours.orange, colours.green, colours.maroon]);
+      const sockOptions = [colours.yellow, colours.white, colours.black];
+      const targetSocks = randomItem(sockOptions);
+      const wrongSockA = targetSocks === colours.black ? colours.white : colours.black;
+      const wrongSockB = targetSocks === colours.yellow ? colours.white : colours.yellow;
+      const shirt = randomItem([colours.red, colours.orange, colours.green, colours.maroon]);
+      const shorts = randomItem([colours.white, colours.black]);
+      const youKit = makeKit({ shirt, shorts, socks: targetSocks, number: "12" });
       const options = [
-        createPlayer("target", "Teammate", makeKit({ shirt: confusingShirt, shorts: colours.white, socks: chosen.target, number: "7" }), true),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: confusingShirt, shorts: colours.white, socks: chosen.wrong, number: "4" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.orange, shorts: colours.black, socks: chosen.wrong, number: "2" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: confusingShirt, shorts: colours.black, socks: colours.grey, number: "6" }), false)
+        teammateFromYou(youKit),
+        opponent(makeKit({ shirt, shorts, socks: wrongSockA })),
+        opponent(makeKit({ shirt, shorts, socks: wrongSockB })),
+        opponent(makeKit({ shirt: randomItem([colours.orange, colours.red, colours.green]), shorts, socks: wrongSockA }))
       ];
       return {
         prompt: "Make the pass",
-        helper: `Your side has ${chosen.word}`,
+        helper: "Look at your socks. Pass to the matching socks.",
+        youKit,
         options
       };
     }
 
     function buildShortsMission() {
       const targetShorts = randomItem([colours.white, colours.black, colours.yellow]);
-      const wrongShorts = targetShorts === colours.black ? colours.white : colours.black;
-      const shirt = randomItem([colours.blue, colours.purple, colours.teal]);
+      const wrongShortA = targetShorts === colours.black ? colours.white : colours.black;
+      const wrongShortB = targetShorts === colours.yellow ? colours.white : colours.yellow;
+      const shirt = randomItem([colours.blue, colours.purple, colours.teal, colours.deepBlue]);
+      const socks = randomItem([colours.white, colours.black]);
+      const youKit = makeKit({ shirt, shorts: targetShorts, socks, number: "12" });
       const options = [
-        createPlayer("target", "Teammate", makeKit({ shirt, shorts: targetShorts, socks: colours.white, number: "10" }), true),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt, shorts: wrongShorts, socks: colours.white, number: "3" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.purple, shorts: wrongShorts, socks: colours.black, number: "11" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt, shorts: colours.grey, socks: colours.black, number: "6" }), false)
+        teammateFromYou(youKit),
+        opponent(makeKit({ shirt, shorts: wrongShortA, socks })),
+        opponent(makeKit({ shirt, shorts: wrongShortB, socks })),
+        opponent(makeKit({ shirt: randomItem([colours.blue, colours.purple, colours.teal]), shorts: wrongShortA, socks: colours.grey }))
       ];
       return {
         prompt: "Make the pass",
-        helper: targetShorts === colours.black ? "Your side has black shorts" : targetShorts === colours.white ? "Your side has white shorts" : "Your side has yellow shorts",
+        helper: "Look at your shorts. Pass to the matching shorts.",
+        youKit,
         options
       };
     }
 
     function buildPatternMission() {
       const patterns = [
-        { pattern: "stripes", word: "stripes" },
-        { pattern: "hoops", word: "hoops" },
-        { pattern: "sash", word: "sash" }
+        { pattern: "stripes", word: "same stripes" },
+        { pattern: "hoops", word: "same hoops" },
+        { pattern: "sash", word: "same sash" }
       ];
       const targetPattern = randomItem(patterns);
       const base = randomItem([colours.red, colours.green, colours.blue, colours.purple]);
+      const stripe = randomItem([colours.white, colours.yellow]);
+      const shorts = randomItem([colours.white, colours.black]);
+      const socks = randomItem([colours.white, colours.black]);
+      const youKit = makeKit({ shirt: base, shorts, socks, pattern: targetPattern.pattern, stripe, number: "12" });
+      const otherPattern = targetPattern.pattern === "stripes" ? "hoops" : "stripes";
       const options = [
-        createPlayer("target", "Teammate", makeKit({ shirt: base, shorts: colours.white, socks: colours.black, pattern: targetPattern.pattern, stripe: colours.white, number: "8" }), true),
-        createPlayer(uniqueKey("opp"), "Plain", makeKit({ shirt: base, shorts: colours.white, socks: colours.black, pattern: "plain", number: "5" }), false),
-        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: base, shorts: colours.black, socks: colours.white, pattern: targetPattern.pattern === "stripes" ? "hoops" : "stripes", stripe: colours.yellow, number: "2" }), false),
-        createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: randomItem([colours.orange, colours.green]), shorts: colours.black, socks: colours.white, pattern: "plain", number: "9" }), false)
+        teammateFromYou(youKit),
+        opponent(makeKit({ shirt: base, shorts, socks, pattern: "plain", stripe })),
+        opponent(makeKit({ shirt: base, shorts, socks, pattern: otherPattern, stripe })),
+        opponent(makeKit({ shirt: randomItem([colours.orange, colours.green, colours.purple]), shorts, socks, pattern: "plain" }))
       ];
       return {
         prompt: "Make the pass",
-        helper: `Your side has ${targetPattern.word}`,
+        helper: `Look for the ${targetPattern.word} on your shirt`,
+        youKit,
         options
       };
     }
 
     function buildBrightnessMission() {
       const targetLight = Math.random() > 0.5;
-      const targetKit = targetLight
-        ? makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white, number: "8" })
-        : makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black, number: "8" });
-      const wrongKit = targetLight
-        ? makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black, number: "6" })
-        : makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white, number: "6" });
+      const youKit = targetLight
+        ? makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white, number: "12" })
+        : makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black, number: "12" });
       const options = [
-        createPlayer("target", "Teammate", targetKit, true),
-        createPlayer(uniqueKey("opp"), "Opponent", wrongKit, false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.grey, shorts: colours.white, socks: colours.black, number: "4" }), false)
+        teammateFromYou(youKit),
+        opponent(targetLight
+          ? makeKit({ shirt: colours.black, shorts: colours.grey, socks: colours.black })
+          : makeKit({ shirt: colours.white, shorts: colours.yellow, socks: colours.white })),
+        opponent(makeKit({ shirt: colours.grey, shorts: colours.white, socks: colours.black })),
+        opponent(makeKit({ shirt: targetLight ? colours.orange : colours.maroon, shorts: targetLight ? colours.black : colours.white, socks: colours.grey }))
       ];
       return {
         prompt: "Make the pass",
-        helper: targetLight ? "Your side has light kit" : "Your side has dark kit",
-        options,
-        slotMode: "three"
+        helper: targetLight ? "Your #12 kit is light. Find the matching light kit." : "Your #12 kit is dark. Find the matching dark kit.",
+        youKit,
+        options
       };
     }
 
@@ -1259,16 +1385,17 @@
       ];
       const targetDir = randomItem(dirs);
       const others = dirs.filter(d => d.word !== targetDir.word);
-      const confusing = makeKit({ shirt: colours.red, shorts: colours.black, socks: colours.white, number: "7" });
+      const youKit = makeKit({ shirt: colours.red, shorts: colours.black, socks: colours.white, number: "12" });
       const options = [
-        createPlayer("target", "Teammate", confusing, true, { arrow: targetDir.arrow }),
-        createPlayer(uniqueKey("opp"), "Opponent", confusing, false, { arrow: others[0].arrow }),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.orange, shorts: colours.black, socks: colours.white, number: "4" }), false, { arrow: others[1].arrow }),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black, number: "5" }), false, { arrow: others[2].arrow })
+        teammateFromYou(youKit, { arrow: targetDir.arrow }),
+        opponent(makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black }), { arrow: others[0].arrow }),
+        opponent(makeKit({ shirt: colours.orange, shorts: colours.black, socks: colours.white }), { arrow: others[1].arrow }),
+        opponent(makeKit({ shirt: colours.maroon, shorts: colours.black, socks: colours.grey }), { arrow: others[2].arrow })
       ];
       return {
         prompt: "Make the pass",
-        helper: `Your side is moving ${targetDir.word}`,
+        helper: `Match your kit and the player moving ${targetDir.word}`,
+        youKit,
         options
       };
     }
@@ -1280,16 +1407,18 @@
         { word: "left", slot: "mid-left" },
         { word: "right", slot: "mid-right" }
       ]);
-      const target = createPlayer("target", "Teammate", makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "8" }), true, { slot: position.slot });
+      const youKit = makeKit({ shirt: colours.blue, shorts: colours.white, socks: colours.yellow, number: "12" });
+      const target = teammateFromYou(youKit, { slot: position.slot });
       const options = [
         target,
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.blue, shorts: colours.black, socks: colours.white, number: "4" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black, number: "5" }), false),
-        createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.green, shorts: colours.black, socks: colours.white, number: "9" }), false)
+        opponent(makeKit({ shirt: colours.blue, shorts: colours.black, socks: colours.white })),
+        opponent(makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black })),
+        opponent(makeKit({ shirt: colours.green, shorts: colours.black, socks: colours.white }))
       ];
       return {
         prompt: "Make the pass",
-        helper: `Your side is in the ${position.word} position`,
+        helper: `Find your matching kit in the ${position.word} position`,
+        youKit,
         options
       };
     }
@@ -1325,6 +1454,7 @@
     function openPause() {
       if (!screens.game.classList.contains("active")) return;
       state.paused = true;
+      updateHUD();
       els.pauseModal.classList.add("open");
       els.resumeBtn.focus();
     }
@@ -1332,6 +1462,7 @@
     function closePause() {
       state.paused = false;
       els.pauseModal.classList.remove("open");
+      updateHUD();
     }
 
     function menuFromPause() {
@@ -1344,6 +1475,7 @@
     els.levelsBtn.addEventListener("click", () => { buildLevelGrid(); showScreen("levels"); });
     els.backHomeBtn.addEventListener("click", () => showScreen("start"));
     els.pauseBtn.addEventListener("click", openPause);
+    els.fiftyBtn.addEventListener("click", useFiftyFifty);
     els.resumeBtn.addEventListener("click", closePause);
     els.restartBtn.addEventListener("click", () => { closePause(); startLevel(state.levelIndex); });
     els.menuBtn.addEventListener("click", menuFromPause);
