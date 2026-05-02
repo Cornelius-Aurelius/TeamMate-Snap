@@ -342,9 +342,8 @@
       border: 4px solid rgba(255,255,255,.96);
       box-shadow: 0 14px 32px rgba(0,0,0,.24);
       display: grid;
-      grid-template-rows: 1fr auto;
       place-items: center;
-      padding: 8px 8px 10px;
+      padding: 10px;
       z-index: 2;
     }
 
@@ -762,8 +761,8 @@
 
         <div class="mission-card">
           <div class="tiny-label">Mission</div>
-          <div class="mission-text" id="missionText">Tap your teammate</div>
-          <div class="helper-text" id="helperText">Look at the full kit</div>
+          <div class="mission-text" id="missionText">Make the pass</div>
+          <div class="helper-text" id="helperText">Use the clue, not colour</div>
         </div>
 
         <div class="pitch-wrap">
@@ -778,7 +777,7 @@
 
         <div class="status-area">
           <div class="bar" aria-hidden="true"><div class="fill" id="progressFill"></div></div>
-          <div class="message" id="message">Tap the player who matches the clue.</div>
+          <div class="message" id="message">Choose the player who matches the clue.</div>
         </div>
       </div>
     </section>
@@ -798,7 +797,7 @@
       <h2 id="pauseTitle">Paused</h2>
       <p class="sub">The timer is stopped.</p>
       <div class="instruction-box">
-        <p><strong>How to play:</strong> read the big mission, use the clue, then tap your teammate.</p>
+        <p><strong>How to play:</strong> read the big mission, use the clue, then choose the player who matches your side.</p>
         <p><strong>This level:</strong> <span id="levelHelp">Use the full kit. Do not rely only on shirt colour.</span></p>
         <p><strong>Football habit:</strong> colour can lie. Check a second clue before you pass.</p>
       </div>
@@ -1030,7 +1029,7 @@
       state.currentMission = level.builder();
       els.missionText.textContent = state.currentMission.prompt;
       els.helperText.textContent = state.currentMission.helper;
-      els.message.textContent = state.currentMission.message || "Tap the teammate who matches the clue.";
+      els.message.textContent = state.currentMission.message || "Choose the player who matches the clue.";
       renderMission(state.currentMission);
       updateHUD();
     }
@@ -1083,12 +1082,8 @@
         btn.type = "button";
         btn.dataset.key = option.key;
         btn.dataset.slot = option.slot || slots[index] || "mid-left";
-        btn.setAttribute("aria-label", option.label);
+        btn.setAttribute("aria-label", `Player choice ${index + 1}`);
         btn.appendChild(renderPlayer(option));
-        const label = document.createElement("div");
-        label.className = "option-label";
-        label.textContent = option.label;
-        btn.appendChild(label);
         btn.addEventListener("click", () => handleChoice(btn, option));
         els.pitch.appendChild(btn);
       });
@@ -1168,8 +1163,8 @@
         createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: colours.green, shorts: colours.white, socks: colours.black, number: "9" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: "Same full kit",
+        prompt: "Make the pass",
+        helper: "Find the player with your full kit",
         options,
         slotMode: "three"
       };
@@ -1190,8 +1185,8 @@
         createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: confusingShirt, shorts: colours.black, socks: colours.grey, number: "6" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: `Look for ${chosen.word}`,
+        prompt: "Make the pass",
+        helper: `Your side has ${chosen.word}`,
         options
       };
     }
@@ -1207,8 +1202,8 @@
         createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt, shorts: colours.grey, socks: colours.black, number: "6" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: targetShorts === colours.black ? "Look for black shorts" : targetShorts === colours.white ? "Look for white shorts" : "Look for yellow shorts",
+        prompt: "Make the pass",
+        helper: targetShorts === colours.black ? "Your side has black shorts" : targetShorts === colours.white ? "Your side has white shorts" : "Your side has yellow shorts",
         options
       };
     }
@@ -1228,8 +1223,8 @@
         createPlayer(uniqueKey("opp"), "Other", makeKit({ shirt: randomItem([colours.orange, colours.green]), shorts: colours.black, socks: colours.white, pattern: "plain", number: "9" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: `Look for ${targetPattern.word}`,
+        prompt: "Make the pass",
+        helper: `Your side has ${targetPattern.word}`,
         options
       };
     }
@@ -1248,8 +1243,8 @@
         createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.grey, shorts: colours.white, socks: colours.black, number: "4" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: targetLight ? "Look for light kit" : "Look for dark kit",
+        prompt: "Make the pass",
+        helper: targetLight ? "Your side has light kit" : "Your side has dark kit",
         options,
         slotMode: "three"
       };
@@ -1272,8 +1267,8 @@
         createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.red, shorts: colours.white, socks: colours.black, number: "5" }), false, { arrow: others[2].arrow })
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: `Moving ${targetDir.word}`,
+        prompt: "Make the pass",
+        helper: `Your side is moving ${targetDir.word}`,
         options
       };
     }
@@ -1293,8 +1288,8 @@
         createPlayer(uniqueKey("opp"), "Opponent", makeKit({ shirt: colours.green, shorts: colours.black, socks: colours.white, number: "9" }), false)
       ];
       return {
-        prompt: "Tap your teammate",
-        helper: `Use position: ${position.word}`,
+        prompt: "Make the pass",
+        helper: `Your side is in the ${position.word} position`,
         options
       };
     }
@@ -1302,7 +1297,7 @@
     function buildClashMission() {
       const builders = [buildSocksMission, buildShortsMission, buildPatternMission, buildBrightnessMission];
       const mission = randomItem(builders)();
-      mission.prompt = "Kit clash: find teammate";
+      mission.prompt = "Kit clash: make the pass";
       mission.message = "Colours are confusing. Use the second clue.";
       return mission;
     }
@@ -1310,7 +1305,7 @@
     function buildMixedMission() {
       const builders = [buildSocksMission, buildShortsMission, buildPatternMission, buildBrightnessMission, buildDirectionMission, buildPositionMission];
       const mission = randomItem(builders)();
-      mission.prompt = "Fast pass: teammate?";
+      mission.prompt = "Fast pass";
       return mission;
     }
 
